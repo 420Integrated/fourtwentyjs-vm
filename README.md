@@ -1,1 +1,229 @@
-# fourtwentyjs-vm
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/47108/78779352-d0839500-796a-11ea-9468-fd2a0b3fe1ef.png" width=280>
+</p>
+
+# FourtwentyJS Monorepo
+
+[![Code Coverage][coverage-badge]][coverage-link]
+[![Discord][discord-badge]][discord-link]
+
+This was originally the FourtwentyJS VM repository. On Q1 2020 we brought some of its building blocks tog420er to simplify development. Below you can find the packages included in this repository.
+
+🚧 Please note that the `master` branch is updated on a daily basis, and to inspect code related to a specific package version, refer to the [tags](https://github.com/420integrated/fourtwentyjs-vm/tags).
+
+| package                                     | npm                                                         | issues                                                                  | tests                                                                  | coverage                                                                |
+| ------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [@fourtwentyjs/block][block-package]           | [![NPM Package][block-npm-badge]][block-npm-link]           | [![Block Issues][block-issues-badge]][block-issues-link]                | [![Actions Status][block-actions-badge]][block-actions-link]           | [![Code Coverage][block-coverage-badge]][block-coverage-link]           |
+| [@fourtwentyjs/blockchain][blockchain-package] | [![NPM Package][blockchain-npm-badge]][blockchain-npm-link] | [![Blockchain Issues][blockchain-issues-badge]][blockchain-issues-link] | [![Actions Status][blockchain-actions-badge]][blockchain-actions-link] | [![Code Coverage][blockchain-coverage-badge]][blockchain-coverage-link] |
+| [@fourtwentyjs/common][common-package]         | [![NPM Package][common-npm-badge]][common-npm-link]         | [![Common Issues][common-issues-badge]][common-issues-link]             | [![Actions Status][common-actions-badge]][common-actions-link]         | [![Code Coverage][common-coverage-badge]][common-coverage-link]         |
+| [@fourtwentyjs/ethash][ethash-package]         | [![NPM Package][ethash-npm-badge]][ethash-npm-link]         | [![Ethash Issues][ethash-issues-badge]][ethash-issues-link]             | [![Actions Status][ethash-actions-badge]][ethash-actions-link]         | [![Code Coverage][ethash-coverage-badge]][ethash-coverage-link]         |
+| [@fourtwentyjs/tx][tx-package]                 | [![NPM Package][tx-npm-badge]][tx-npm-link]                 | [![Tx Issues][tx-issues-badge]][tx-issues-link]                         | [![Actions Status][tx-actions-badge]][tx-actions-link]                 | [![Code Coverage][tx-coverage-badge]][tx-coverage-link]                 |
+| [@fourtwentyjs/vm][vm-package]                 | [![NPM Package][vm-npm-badge]][vm-npm-link]                 | [![VM Issues][vm-issues-badge]][vm-issues-link]                         | [![Actions Status][vm-actions-badge]][vm-actions-link]                 | [![Code Coverage][vm-coverage-badge]][vm-coverage-link]                 |
+
+## Coverage report
+
+Detailed version can be seen on [Codecov.io][coverage-link]
+
+[![Code Coverage](https://codecov.io/gh/420integrated/fourtwentyjs-vm/branch/master/graphs/icicle.svg)][coverage-link]
+
+## Package dependency relationship
+
+<p align="center">
+ <img width="409" alt="diagram" src="https://user-images.githubusercontent.com/47108/84323915-b0787980-ab45-11ea-96fd-55a03ba1f3e8.png">
+</p>
+
+<!-- CREATED WITH MERMAID
+https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoiZ3JhcGggVERcbiAgdm17Vk19XG4gIGNvbW1vbiAtLT4gYmxvY2tjaGFpblxuICBjb21tb24gLS0-IGJsb2NrXG4gIGNvbW1vbiAtLT4gdm1cbiAgY29tbW9uIC0tPiB0eFxuICBldGhhc2ggLS0-IGJsb2NrY2hhaW5cbiAgYmxvY2sgLS0-IGJsb2NrY2hhaW5cbiAgYmxvY2tjaGFpbiAtLT4gdm1cbiAgYmxvY2sgLS0-IHZtXG4gIHR4IC0tPiB2bVxuICB0eCAtLT4gYmxvY2tcbiAgYWNjb3VudCAtLT4gdm1cbiAgIiwibWVybWFpZCI6eyJ0aGVtZSI6ImRlZmF1bHQifSwidXBkYXRlRWRpdG9yIjpmYWxzZX0
+-->
+
+## Development quick start
+
+This monorepo uses [Lerna](https://lerna.js.org/). It links the local packages tog420er, making development a lot easier.
+
+TLDR: Setup
+```sh
+npm install
+npm build
+```
+
+TLDR: To update dependencies and (re-)link packages
+```sh
+npm run bootstrap
+npm build
+```
+
+Above is the quickest way to set you up. Going down the road, there are two sets of commands: *project* and *package-specific* commands. You can find them at `./package.json` and `./packages/*/package.json`, respectively. Here's a breakdown:
+
+### Project scripts — run from repository root
+
+#### `npm install`
+Adds dependencies listed in the root package. Also, it executes the `bootstrap` script described below, installing all sub-packages dependencies.
+
+#### `npm run bootstrap`
+
+Installs dependencies for all sub-packages, and links them to create an integrated development environment.
+
+#### `npm run build`
+
+Builds all monorepo packages by default. If a scope is provided, it will only build that particular package.
+
+Scoped example, that will only build the VM package: 
+  npm run build -- --scope @fourtwentyjs/vm
+
+
+#### `npm run build:tree -- --scope @fourtwentyjs/blockchain`
+
+Builds all local packages that the provided package depends on (e.g.: @fourtwentyjs/blockchain), and builds itself. 
+
+If no scope is provided, `npm run build:tree`, will build all sub-packages.
+
+### Package scripts — run from `./packages/<name>`
+
+ **⚠️ Important: if you run `npm install` from the package directory, it will remove all links to the local packages, pulling all dependencies from npm. Run `npm install` from the root only.**
+ 
+There's a set of rather standardized commands you will find in each package of this repository.
+
+#### `npm run build`
+
+Uses TypeScript compiler to build source files. The resulting files can be found at `packages/<name>/dist`.
+
+#### `npm run coverage`
+
+Runs whatever is on `npm run test` script, capturing testing coverage information. By the end, it displays a coverage table. Additional reports can be found at `packages/<name>/coverage/`.
+
+#### `npm run docs:build`
+
+Generates package documentation and saves them to `./packages/<name>/docs`.
+
+#### `npm run lint`
+
+Checks code style according to the rules defined in [fourtwentyjs-config](https://github.com/420integrated/fourtwentyjs-config).
+
+#### `npm run lint:fix`
+
+Fixes code style according to the rules. Differently from `npm run lint`, this command actually writes to files.
+
+#### `npm run test`
+
+Runs the package tests. 
+
+_Note that the VM has several test scopes - refer to [packages/vm/package.json](https://github.com/420integrated/fourtwentyjs-vm/blob/master/packages/vm/package.json) for more info._
+
+#### `npm run clean`
+
+Removes root and package `node_modules` directories, and other generated files, like `coverage`, `dist` and others. This is useful to run after changing branches, to have a clean slate to work with.
+
+### Going further
+
+As this project is powered by Lerna, you can install it globally to enjoy lots more options. Refer to [Lerna docs](https://github.com/lerna/lerna/tree/master/commands/run) for additional commands.
+
+- `npm install -g lerna`
+- `lerna run`
+- `lerna exec`
+
+#### Cleaning `node_modules`
+
+Hoisting is enabled so dependencies are moved to the root `node_modules`. `lerna clean` [does not remove the root `node_modules`](https://github.com/lerna/lerna/issues/1304) so for convenience you can use the project script `npm run clean`.
+
+### Testing packages locally on other projects
+
+There are some ways you can link this repository packages to other projects before publishing. You can symlink dependencies with [`npm link <package>`](https://docs.npmjs.com/cli/link), or install packages from the filesystem using [`npm install <folder>`](https://docs.npmjs.com/cli/install). But they are subject to some externalities and most importantly with how your package manager handles the lifecycle of packages during installs. 
+
+_Note: Git references do not work with monorepo setups out of the box due to the lack of directory traversal on the syntax. E.g.:_
+
+  npm install git@github.com:420integrated/fourtwentyjs-vm.git
+
+_One way to fetch packages remotely from GitHub before publishing is using [gitpkg.now.sh](https://gitpkg.now.sh/)._
+
+But there's a cleaner way to manage your dependencies using Verdaccio. 
+
+#### Install Verdaccio
+
+Verdaccio is an npm registry and proxy that can be of great help to test packages locally. Check out their [Getting Started guide](https://github.com/verdaccio/verdaccio#get-started).
+
+#### Installs, hoists dependencies and builds packages
+npm install
+
+#### Publish monorepo packages to Verdaccio
+lerna exec "npm publish --registry http://localhost:4873 --ignore-scripts"
+
+#### Unpublish all monorepo packages from Verdaccio
+lerna exec "npm unpublish \$LERNA_PACKAGE_NAME --registry http://localhost:4873 --force"
+
+#### Setup @fourtwentyjs scope to local Verdaccio server
+  npm config set @fourtwentyjs:registry http://localhost:4873
+
+#### Teardown @fourtwentyjs scope to local Verdaccio server
+  npm config delete @fourtwentyjs:registry
+
+
+# FourtwentyJS
+
+See our organizational [documentation](https://fourtwentyjs.readthedocs.io) for an introduction to `FourtwentyJS` as well as information on current standards and best practices.
+
+If you want to join for work or do improvements on the libraries have a look at our [contribution guidelines](https://fourtwentyjs.readthedocs.io/en/latest/contributing.html).
+
+# LICENSE
+
+[MIT](https://opensource.org/licenses/MIT)
+
+[coverage-badge]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/branch/master/graph/badge.svg
+[coverage-link]: https://codecov.io/gh/420integrated/fourtwentyjs-vm
+[discord-badge]: https://img.shields.io/static/v1?logo=discord&label=discord&message=Join&color=blue
+[discord-link]: https://discord.gg/TNwARpR
+[stackexchange-badge]: https://img.shields.io/badge/fourtwentyjs-stackexchange-brightgreen
+[stackexchange-link]: https://ethereum.stackexchange.com/questions/tagged/fourtwentyjs
+[block-package]: ./packages/block
+[block-npm-badge]: https://img.shields.io/npm/v/@fourtwentyjs/block.svg
+[block-npm-link]: https://www.npmjs.com/package/@fourtwentyjs/block
+[block-issues-badge]: https://img.shields.io/github/issues/420integrated/fourtwentyjs-vm/package:%20block?label=issues
+[block-issues-link]: https://github.com/420integrated/fourtwentyjs-vm/issues?q=is%3Aopen+is%3Aissue+label%3A"package%3A+block"
+[block-actions-badge]: https://github.com/420integrated/fourtwentyjs-vm/workflows/Block/badge.svg
+[block-actions-link]: https://github.com/420integrated/fourtwentyjs-vm/actions?query=workflow%3A%22Block%22
+[block-coverage-badge]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/branch/master/graph/badge.svg?flag=block
+[block-coverage-link]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/tree/master/packages/block
+[blockchain-package]: ./packages/blockchain
+[blockchain-npm-badge]: https://img.shields.io/npm/v/@fourtwentyjs/blockchain.svg
+[blockchain-npm-link]: https://www.npmjs.com/package/@fourtwentyjs/blockchain
+[blockchain-issues-badge]: https://img.shields.io/github/issues/420integrated/fourtwentyjs-vm/package:%20blockchain?label=issues
+[blockchain-issues-link]: https://github.com/420integrated/fourtwentyjs-vm/issues?q=is%3Aopen+is%3Aissue+label%3A"package%3A+blockchain"
+[blockchain-actions-badge]: https://github.com/420integrated/fourtwentyjs-vm/workflows/Blockchain/badge.svg
+[blockchain-actions-link]: https://github.com/420integrated/fourtwentyjs-vm/actions?query=workflow%3A%22Blockchain%22
+[blockchain-coverage-badge]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/branch/master/graph/badge.svg?flag=blockchain
+[blockchain-coverage-link]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/tree/master/packages/blockchain
+[common-package]: ./packages/common
+[common-npm-badge]: https://img.shields.io/npm/v/@fourtwentyjs/common.svg
+[common-npm-link]: https://www.npmjs.com/package/@fourtwentyjs/common
+[common-issues-badge]: https://img.shields.io/github/issues/420integrated/fourtwentyjs-vm/package:%20common?label=issues
+[common-issues-link]: https://github.com/420integrated/fourtwentyjs-vm/issues?q=is%3Aopen+is%3Aissue+label%3A"package%3A+common"
+[common-actions-badge]: https://github.com/420integrated/fourtwentyjs-vm/workflows/Common/badge.svg
+[common-actions-link]: https://github.com/420integrated/fourtwentyjs-vm/actions?query=workflow%3A%22Common%22
+[common-coverage-badge]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/branch/master/graph/badge.svg?flag=common
+[common-coverage-link]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/tree/master/packages/common
+[ethash-package]: ./packages/ethash
+[ethash-npm-badge]: https://img.shields.io/npm/v/@fourtwentyjs/ethash.svg
+[ethash-npm-link]: https://www.npmjs.org/package/@fourtwentyjs/ethash
+[ethash-issues-badge]: https://img.shields.io/github/issues/420integrated/fourtwentyjs-vm/package:%20ethash?label=issues
+[ethash-issues-link]: https://github.com/420integrated/fourtwentyjs-vm/issues?q=is%3Aopen+is%3Aissue+label%3A"package%3A+ethash"
+[ethash-actions-badge]: https://github.com/420integrated/fourtwentyjs-vm/workflows/Ethash/badge.svg
+[ethash-actions-link]: https://github.com/420integrated/fourtwentyjs-vm/actions?query=workflow%3A%22Ethash%22
+[ethash-coverage-badge]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/branch/master/graph/badge.svg?flag=ethash
+[ethash-coverage-link]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/tree/master/packages/ethash
+[tx-package]: ./packages/tx
+[tx-npm-badge]: https://img.shields.io/npm/v/@fourtwentyjs/tx.svg
+[tx-npm-link]: https://www.npmjs.com/package/@fourtwentyjs/tx
+[tx-issues-badge]: https://img.shields.io/github/issues/420integrated/fourtwentyjs-vm/package:%20tx?label=issues
+[tx-issues-link]: https://github.com/420integrated/fourtwentyjs-vm/issues?q=is%3Aopen+is%3Aissue+label%3A"package%3A+tx"
+[tx-actions-badge]: https://github.com/420integrated/fourtwentyjs-vm/workflows/Tx/badge.svg
+[tx-actions-link]: https://github.com/420integrated/fourtwentyjs-vm/actions?query=workflow%3A%22Tx%22
+[tx-coverage-badge]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/branch/master/graph/badge.svg?flag=tx
+[tx-coverage-link]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/tree/master/packages/tx
+[vm-package]: ./packages/vm
+[vm-npm-badge]: https://img.shields.io/npm/v/@fourtwentyjs/vm.svg
+[vm-npm-link]: https://www.npmjs.com/package/@fourtwentyjs/vm
+[vm-issues-badge]: https://img.shields.io/github/issues/420integrated/fourtwentyjs-vm/package:%20vm?label=issues
+[vm-issues-link]: https://github.com/420integrated/fourtwentyjs-vm/issues?q=is%3Aopen+is%3Aissue+label%3A"package%3A+vm"
+[vm-actions-badge]: https://github.com/420integrated/fourtwentyjs-vm/workflows/VM/badge.svg
+[vm-actions-link]: https://github.com/420integrated/fourtwentyjs-vm/actions?query=workflow%3A%22VM%22
+[vm-coverage-badge]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/branch/master/graph/badge.svg?flag=vm
+[vm-coverage-link]: https://codecov.io/gh/420integrated/fourtwentyjs-vm/tree/master/packages/vm
