@@ -1,0 +1,39 @@
+{
+  "name": "petersburg",
+  "comment": "Aka constantinopleFix, removes EIP-1283, activate tog420er with or after constantinople",
+  "url": "https://eips.ethereum.org/EIPS/eip-1716",
+  "status": "Draft",
+  "smokeConfig": {},
+  "smokePrices": {
+    "netSstoreNoopSmoke": {
+      "v": null,
+      "d": "Removed along EIP-1283"
+    },
+    "netSstoreInitSmoke": {
+      "v": null,
+      "d": "Removed along EIP-1283"
+    },
+    "netSstoreCleanSmoke": {
+      "v": null,
+      "d": "Removed along EIP-1283"
+    },
+    "netSstoreDirtySmoke": {
+      "v": null,
+      "d": "Removed along EIP-1283"
+    },
+    "netSstoreClearRefund": {
+      "v": null,
+      "d": "Removed along EIP-1283"
+    },
+    "netSstoreResetRefund": {
+      "v": null,
+      "d": "Removed along EIP-1283"
+    },
+    "netSstoreResetClearRefund": {
+      "v": null,
+      "d": "Removed along EIP-1283"
+    }
+  },
+  "vm": {},
+  "pow": {}
+}

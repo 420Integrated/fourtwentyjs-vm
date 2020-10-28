@@ -1,0 +1,4 @@
+{
+  "extends": "@fourtwentyjs/config-typescript",
+  "include": ["src/**/*.ts", "src/**/*.json", "tests/*.ts", "tests/*.json"]
+}
