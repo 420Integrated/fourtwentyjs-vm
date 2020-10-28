@@ -1,0 +1,8 @@
+{
+  "extends": "@fourtwentyjs/config-typescript",
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "compilerOptions": {
+    "types": ["node"],
+    "typeRoots": ["node_modules/@types"]
+  }
+}
