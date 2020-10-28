@@ -1,0 +1,48 @@
+import { Transaction, TxData } from '@fourtwentyjs/tx'
+import { toBuffer, setLengthLeft } from 'fourtwentyjs-util'
+import { Block, BlockOptions } from './index'
+
+import blockHeaderFromRpc from './header-from-rpc'
+
+function normalizeTxParams(_txParams: any) {
+  const txParams = Object.assign({}, _txParams)
+
+  txParams.smokeLimit = txParams.smokeLimit === undefined ? txParams.smoke : txParams.smokeLimit
+  txParams.data = txParams.data === undefined ? txParams.input : txParams.data
+
+  // strict byte length checking
+  txParams.to = txParams.to ? setLengthLeft(toBuffer(txParams.to), 20) : null
+
+  // v as raw signature value {0,1}
+  // v is the recovery bit and can be either {0,1} or {27,28}.
+  // https://ethereum.stackexchange.com/questions/40679/why-the-value-of-v-is-always-either-27-11011-or-28-11100
+  const v: number = txParams.v
+  txParams.v = v < 27 ? v + 27 : v
+
+  return txParams
+}
+
+/**
+ * Creates a new block object from 420coin JSON RPC.
+ *
+ * @param blockParams - 420coin JSON RPC of block (fourtwenty_getBlockByNumber)
+ * @param uncles - Optional list of 420coin JSON RPC of uncles (fourtwenty_getUncleByBlockHashAndIndex)
+ * @param chainOptions - An object describing the blockchain
+ */
+export default function blockFromRpc(blockParams: any, uncles: any[] = [], options?: BlockOptions) {
+  const header = blockHeaderFromRpc(blockParams, options)
+
+  const transactions: Transaction[] = []
+  if (blockParams.transactions) {
+    const opts = { common: header._common }
+    for (const _txParams of blockParams.transactions) {
+      const txParams = normalizeTxParams(_txParams)
+      const tx = Transaction.fromTxData(txParams as TxData, opts)
+      transactions.push(tx)
+    }
+  }
+
+  const uncleHeaders = uncles.map((uh) => blockHeaderFromRpc(uh, options))
+
+  return Block.fromBlockData({ header, transactions, uncleHeaders })
+}

@@ -1,0 +1,7 @@
+{
+  "extends": "@fourtwentyjs/config-typescript",
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "compilerOptions": {
+    "outDir": "test-build"
+  }
+}
