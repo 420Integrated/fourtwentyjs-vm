@@ -1,0 +1,229 @@
+import { Address, BN } from 'fourtwentyjs-util'
+import { Block } from '@fourtwentyjs/block'
+import { Transaction } from '@fourtwentyjs/tx'
+import VM from './index'
+import Bloom from './bloom'
+import { default as EVM, EVMResult } from './evm/evm'
+import Message from './evm/message'
+import TxContext from './evm/txContext'
+
+/**
+ * Options for the `runTx` method.
+ */
+export interface RunTxOpts {
+  /**
+   * The block to which the `tx` belongs
+   */
+  block?: Block
+  /**
+   * An [`@fourtwentyjs/tx`](https://github.com/420integrated/fourtwentyjs-vm/tree/master/packages/tx) to run
+   */
+  tx: Transaction
+  /**
+   * If true, skips the nonce check
+   */
+  skipNonce?: boolean
+  /**
+   * If true, skips the balance check
+   */
+  skipBalance?: boolean
+}
+
+/**
+ * Execution result of a transaction
+ */
+export interface RunTxResult extends EVMResult {
+  /**
+   * Bloom filter resulted from transaction
+   */
+  bloom: Bloom
+  /**
+   * The amount of ether used by this transaction
+   */
+  amountSpent: BN
+  /**
+   * The amount of smoke as that was refunded during the transaction (i.e. `smokeUsed = totalSmokeConsumed - smokeRefund`)
+   */
+  smokeRefund?: BN
+}
+
+/**
+ * @ignore
+ */
+export default async function runTx(this: VM, opts: RunTxOpts): Promise<RunTxResult> {
+  // tx is required
+  if (!opts.tx) {
+    throw new Error('invalid input, tx is required')
+  }
+
+  // create a reasonable default if no block is given
+  if (!opts.block) {
+    const common = opts.tx.common
+    opts.block = Block.fromBlockData({}, { common })
+  }
+
+  if (opts.block.header.smokeLimit.lt(opts.tx.smokeLimit)) {
+    throw new Error('tx has a higher smoke limit than the block')
+  }
+
+  const state = this.stateManager
+  await state.checkpoint()
+
+  try {
+    const result = await _runTx.bind(this)(opts)
+    await state.commit()
+    return result
+  } catch (e) {
+    await state.revert()
+    throw e
+  }
+}
+
+async function _runTx(this: VM, opts: RunTxOpts): Promise<RunTxResult> {
+  const state = this.stateManager
+  const { tx, block } = opts
+
+  if (!block) {
+    throw new Error('block required')
+  }
+
+  /**
+   * The `beforeTx` event
+   *
+   * @event Event: beforeTx
+   * @type {Object}
+   * @property {Transaction} tx emits the Transaction that is about to be processed
+   */
+  await this._emit('beforeTx', tx)
+
+  const caller = tx.getSenderAddress()
+
+  // Validate smoke limit against base fee
+  const basefee = tx.getBaseFee()
+  const smokeLimit = tx.smokeLimit.clone()
+  if (smokeLimit.lt(basefee)) {
+    throw new Error('base fee exceeds smoke limit')
+  }
+  smokeLimit.isub(basefee)
+
+  // Check from account's balance and nonce
+  let fromAccount = await state.getAccount(caller)
+  const { nonce, balance } = fromAccount
+
+  if (!opts.skipBalance) {
+    const cost = tx.getUpfrontCost()
+    if (balance.lt(cost)) {
+      throw new Error(
+        `sender doesn't have enough funds to send tx. The upfront cost is: ${cost.toString()} and the sender's account only has: ${balance.toString()}`
+      )
+    }
+  } else if (!opts.skipNonce) {
+    if (!nonce.eq(tx.nonce)) {
+      throw new Error(
+        `the tx doesn't have the correct nonce. account has nonce of: ${nonce.toString()} tx has nonce of: ${tx.nonce.toString()}`
+      )
+    }
+  }
+
+  // Update from account's nonce and balance
+  fromAccount.nonce.iaddn(1)
+  const txCost = tx.smokeLimit.mul(tx.smokePrice)
+  fromAccount.balance.isub(txCost)
+  await state.putAccount(caller, fromAccount)
+
+  /*
+   * Execute message
+   */
+  const txContext = new TxContext(tx.smokePrice, caller)
+  const { value, data, to } = tx
+  const message = new Message({
+    caller,
+    smokeLimit,
+    to,
+    value,
+    data,
+  })
+  const evm = new EVM(this, txContext, block)
+  const results = (await evm.executeMessage(message)) as RunTxResult
+
+  /*
+   * Parse results
+   */
+  // Generate the bloom for the tx
+  results.bloom = txLogsBloom(results.execResult.logs)
+  // Caculate the total smoke used
+  results.smokeUsed.iadd(basefee)
+  // Process any smoke refund
+  const smokeRefund = evm._refund
+  if (smokeRefund.gtn(0)) {
+    if (smokeRefund.lt(results.smokeUsed.divn(2))) {
+      results.smokeUsed.isub(smokeRefund)
+    } else {
+      results.smokeUsed.isub(results.smokeUsed.divn(2))
+    }
+  }
+  results.amountSpent = results.smokeUsed.mul(tx.smokePrice)
+
+  // Update sender's balance
+  fromAccount = await state.getAccount(caller)
+  const actualTxCost = results.smokeUsed.mul(tx.smokePrice)
+  const txCostDiff = txCost.sub(actualTxCost)
+  fromAccount.balance.iadd(txCostDiff)
+  await state.putAccount(caller, fromAccount)
+
+  // Update miner's balance
+  const miner = block.header.coinbase
+  const minerAccount = await state.getAccount(miner)
+  // add the amount spent on smoke to the miner's account
+  minerAccount.balance.iadd(results.amountSpent)
+
+  // Put the miner account into the state. If the balance of the miner account remains zero, note that
+  // the state.putAccount function puts this into the "touched" accounts. This will thus be removed when
+  // we clean the touched accounts below in case we are in a fork >= SpuriousDragon
+  await state.putAccount(miner, minerAccount)
+
+  /*
+   * Cleanup accounts
+   */
+  if (results.execResult.selfdestruct) {
+    const keys = Object.keys(results.execResult.selfdestruct)
+    for (const k of keys) {
+      const address = new Address(Buffer.from(k, 'hex'))
+      await state.deleteAccount(address)
+    }
+  }
+  await state.cleanupTouchedAccounts()
+  state.clearOriginalStorageCache()
+
+  /**
+   * The `afterTx` event
+   *
+   * @event Event: afterTx
+   * @type {Object}
+   * @property {Object} result result of the transaction
+   */
+  await this._emit('afterTx', results)
+
+  return results
+}
+
+/**
+ * @method txLogsBloom
+ * @private
+ */
+function txLogsBloom(logs?: any[]): Bloom {
+  const bloom = new Bloom()
+  if (logs) {
+    for (let i = 0; i < logs.length; i++) {
+      const log = logs[i]
+      // add the address
+      bloom.add(log[0])
+      // add the topics
+      const topics = log[1]
+      for (let q = 0; q < topics.length; q++) {
+        bloom.add(topics[q])
+      }
+    }
+  }
+  return bloom
+}
