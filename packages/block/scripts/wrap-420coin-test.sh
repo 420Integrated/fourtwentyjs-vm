@@ -5,7 +5,7 @@
 # Based on these instructions: https://github.com/420integrated/fourtwentyjs-block/issues/55
 #
 # Usage: 
-# ./wrap-ethereum-test.sh "https://raw.githubusercontent.com/ethereum/tests/eea4bfbeec5524b2e2c0ff84c8a350fcb3edec23/BasicTests/difficultyEIP2384.json"
+# ./wrap-420coin-test.sh "https://raw.githubusercontent.com/420integrated/go-420coin/tests/eea4bfbeec5524b2e2c0ff84c8a350fcb3edec23/BasicTests/difficultyEIP2384.json"
 # The url must contain the commit hash and should point to a raw JSON file
 #
 
