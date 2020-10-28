@@ -1,0 +1,8 @@
+{
+  "extends": "@fourtwentyjs/config-typescript/tsconfig.browser.json",
+  "include": ["lib/**/*.ts"],
+  "compilerOptions": {
+    "outDir": "./dist.browser",
+    "resolveJsonModule": true
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "extends": "@fourtwentyjs/config-typescript/tsconfig.prod.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "resolveJsonModule": true
+  },
+  "include": ["lib/**/*.ts"]
+}
